@@ -2,7 +2,7 @@
 title: "test"
 author: "Nicholas Nagle"
 date: "January 26, 2015"
-output: html_document
+output: pdf_document
 ---
 # INSTRUCTIONS:
 Edit this file by replacing the instructions with text and code to anser the questions.
@@ -11,8 +11,7 @@ I should be able to knit this file and reproduce the html, pdf, or word document
 A block to load in the data:
 ```{r}
 rm(list=ls()) # Clean the workspace to be empty
-arbuthnot <- read.csv('/Documents/Geography_415/dpaulse1/homework1/data/arbuthnot.csv')
-library('ggplot2')
+arbuthnot <- read.csv('/Users/nnagle/Dropbox/git_root/homework/homework1/data/arbuthnot.csv')
 ```
 
 # Question 1
@@ -20,76 +19,36 @@ This is a question about how the axes affects how we interpret plots.
 
 Create two plots of Male-Female Christenings, one in which the y-axis scale is set by default, and one in which the y-axis extends all the way to zero.  Yes, I know that was in the tutorial.  I want to see it here.
 
-```{r}
-ggplot(data=arbuthnot)+geom_line(aes(x=Year, y=Males, color='Male'))+
-  geom_line(aes(x=Year, y=Females, color='Female'))+
-  ylab('Christenings')
-ggplot(data=arbuthnot)+geom_line(aes(x=Year, y=Males, color='Male'))+
-  geom_line(aes(x=Year, y=Females, color='Female'))+
-  scale_y_continuous(limits=c(0,9000))+ylab('Christenings')
-```
-
  - Describe the visual appearance of the two plots.  Do they "feel" like they describe the same data?  
- -- The two plots follow a similar path, but changing the y-axis scale to start at zero makes the drops in the number of Christenings look less significant.
  - Describe how you might be able to mislead readers by changing the scaling on graphs.  
- -- Changing the scales can make increases and decreases look less or more signifincant depending upon if you expand or shrink the limits.
- - Which plot seems more appropriate here?  Why?  
- -- The first plot seems more appropriate because it highlights the large drop in the number of Christenings (and likely, less births).
+ - Which plot seems more appropriate here?  Why?
 
 # Question 2
 This question is designed to give you some practice with ggplot as well as describing plots in words.
 
 Use ggplot to create a scatterplot that has Female christenings on the x-axis and Male christenings on the y-axis.  Draw a 45 degree line (using geom_abline) to show the line where Male and Female christenings are equal.  Use this figure to describe the relationship and distribution of Male and Female christenings.
-```{r}
-ggplot(data=arbuthnot)+geom_point(aes(x=Females, y=Males))+
-  scale_x_continuous(limits=c(0,9000))+scale_y_continuous(limits=c(0,9000))+
-  geom_abline(intercept=0, slope=1)
-```
-  
-- Because the dots all appear to be on the left side of the line, we see that there were always more male christenings than female christenings. The datapoints also form close to a line, so we could infer that they would be highly correlated. As for the distribution, male christenings seem to range from around 2,500 to
-8,750 with a mean close to 6,000. Female christenings seem to range from around
-2,500 to 7,800 with a mean around 5,200.  
+
 
 
 # Question 3
 
 This is a question about population, sample, representativeness and generalizability.
 
-How do you think the christenings-based sample would compared to a births-based sample?  Similar?  Different?  Why?  Arbuthnot's data probably included most every christening in London during this period; they probably aren't any unreported christenings.  Is this fact important?  Why or why not?  Would a christenings based sample be appropriate now, in the 21st century?  (Hint, this last question is trickier than it might seem.  Think about what causes Male/Female Births, what causes people to christen their children, and any relations or not between these)  
-
- - At the time the data was collected, the christenings-based sample would be better than a births-based sample. At that time, births frequently, if not always, occurred in the home, so there would be no place to obtain official births. A christening, however, was performed on the overwhelming majority of children shortly after birth, so the data would closely reflect the number of births. It is important that Arbuthnot collected data on almost every christening in London as this helps make the sample representative of the population he was interested in studying. Today, a christening-based sample would be less appropriate. Partially, this is because christening children is not performed in every religion, and more importantly, there is a smaller proportion of people who practice any form of religion in modern times.
+How do you think the christenings-based sample would compared to a births-based sample?  Similar?  Different?  Why?  Arbuthnot's data probably included most every christening in London during this period; they probably aren't any unreported christenings.  Is this fact important?  Why or why not?  Would a christenings based sample be appropriate now, in the 21st century?  (Hint, this last question is trickier than it might seem.  Think about what causes Male/Female Births, what causes people to christen their children, and any relations or not between these)
 
 # Question 4
-What does "sex ratio at birth" mean?  How does it depend on biology, cuture and technology.  Consider the three cases of 1) late 17th century England, 2) 21st century US, and China under the [one-child policy](http://en.wikipedia.org/wiki/One-child_policy).  
-
- - "Sex ratio at birth" is defined on the Organisation for Economic Co-operation and Development (OECD) website as the number of boys born alive for every 100 girls that are born alive. 
-   
-  1. 17th century England: At this time, the infant mortality rate was probably substantially higher because medicine and medical technology were not as advanced and prevolent as they are today. Males may have also been more likely to survive as they were seen as the workers and money-makers in the family. This would likely lead poorer families to focus on their male childrens' health. 
-   
-  2. 21st century US: Today, the sex ratio may still have more males, but the rate is probably at (or at least much closer) to its natural rate. Thanks to modern medicine, the infant mortality rate has declined and both genders are seen as equally important.  
-   
-  3. China under the one-child policy: China's one-child policy limited the number of children many families could have. However, the degree of enforcement and the various exceptions to the rule make its results vary. The rule seems to prefer male children being born as one of the common exceptions to the rule was if the first child born to a couple was a female. This policy led to China's sex ratio at birth to reach as high as 117:100 (the natural rate is usually between 103:100 and 107:100).   
+What does "sex ratio at birth" mean?  How does it depend on biology, cuture and technology.  Consider the three cases of 1) late 17th century England, 2) 21st century US, and China under the [one-child policy](http://en.wikipedia.org/wiki/One-child_policy).
 
 
 # Question 5
 The purpose of this quetion is to give you a little practice using standard deviation.
 
-a. The average height of young women ages 18-24 is 64.5 in.  The distribution of heights is approximately normal (Gaussian) with a standardard deviation of $\sigma=2.5$.  Complete this sentence: Approximately 95% of women have a height greater than 59.5 in and less than 69.5 in.
+a. The average height of young women ages 18-24 is 64.5 in.  The distribution of heights is approximately normal (Gaussian) with a standardard deviation of $\sigma=2.5$.  Complete this sentence: Approximately 95% of women have a height greater than ______ in and less than ______ in.
 
 # Question 6
 The purpose of this question is to help you understand the variance.
 
 The formula for sample variance $\sigma^2$ of a dataset is:
 $$\frac{\sum_{i=1}^N (x_i - \bar{x})^2}{N-1}$$
-Describe in words what each part of this equation is, and using the concept of "distance" describe what the sample variance measures.  
-
- - Numerator: ${\sum_{1=1}^N (x_i - \bar{x})^2}$  
- 
-  -- This part of the equation sums up the squared differences between each x value and the mean.  
-  
- - Denominator: ${N-1}$  
- 
-  -- Basically, the denominator serves to make the value above into an average by dividing the numerator by (roughly) the number of observations in the data.  
-  
- - The sample variance is basically the average distance from the mean squared. Squaring the value is done to eliminate the cancelling out of positive and negative differences. If this step was not performed, we would likely obtain a value very close to zero (assuming the data is approximately Normal).
+Describe in words what each part of this equation is, and using the concept of "distance" describe what the sample variance measures.
 
