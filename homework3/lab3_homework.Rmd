@@ -3,11 +3,85 @@ title: "Lab 3 - Homework"
 output: html_document
 ---
 
+```{r}
+setwd('F:/Documents/Geography_415/dpaulse1/homework3')
+
+# Loading libraries
+library('ggplot2')
+library('dplyr')
+library('tidyr')
+library('magrittr')
+
+# Reading data
+precip <- read.csv('data/precip.csv')
+rwi <- read.csv('data/rwi.csv')
+
+# Re-Arranging Data
+precip.tidy <- precip %>% gather(key=month, value=precip, -year) %>% 
+  arrange(year, month)
+# Creating Hydrologic Year
+precip.tidy <- precip.tidy %>% mutate(water_year=lead(year, 6))
+# Creating Data-frame of Annual Precip (using water_year)
+annual_precip <- precip.tidy %>% group_by(water_year) %>%
+  summarize(precip=sum(precip)) %>% filter(water_year>1895)
+# Combining RWI Data with Annual Precip Data
+rwi_precip <- left_join(rwi,annual_precip,by=c('year'='water_year'))
+# Visualize the Data with a Scatter Plot
+rwi_precip %>% filter(year>1895) %>% ggplot(data=.) + 
+  geom_point(aes(x=precip, y=rwi))
+# Creating and Viewing the Model (with stored residuals)
+model <- lm(rwi~precip, data=rwi_precip, na.action=na.exclude)
+rwi_precip$resid <- residuals(model)
+summary(model)
+```
+
 1. For the first three diagnostic plots, describe wich assumptions they help to visually evaluate.
+
+```{r}
+# Viewing Residual Diagnostic Plots
+plot(model)
+```
+
+  - Residual vs. Fitted  
+The first plot helps in visualizing whether or not a line is the best choice to fit the data. In this case, the plot shows that this may not be the case as the residuals seem higher with fitted values towards the middle and lower towards the tails.  
+  - Normal Q-Q  
+The second plot helps us determine if the residuals are normally distributed (or at least close enough). The normality assumption is commonly met if N, the number of observations, is large enough as well. From looking at the plot, I would say the residuals are close enough to being normally distributed.  
+  - Scale-Location  
+The third plot also helps visualize whether or not the residuals are related to the predicted values (and therefore meet the constant variance assumption). Here, we see that the variances seem to increase as the predicted value increases. 
+
+  
 2. These data are time series data.  In general, data are correlated in time, and this would be a problem for simple linear regression.  Plot the regression residuals vs time, and visually assess whether there is evidence of temporal (serial) correlation.
+
+```{r}
+# Viwing the Residuals over Time (checking for serial correlation)
+rwi_precip %>% filter(year>1895) %>% ggplot(data=.) +
+  geom_line(aes(x=year, y=resid, title='Residuals over Time')) +
+  geom_abline(intercept=0, slope=0) + scale_y_continuous(limits=c(-1.2, 1.2))
+```
+
+  - From The above plot labeled "Residuals over Time", we see evidence of serial correlation. In other words, we see that there a positive residual is typically followed by a few more positive residuals before becoming negative and the same pattern follows for negative residuals. This observation is not surprising considering this is an example of time series data.  
+
+
 3. In the data folder is the dataset GalapagosData.txt.  The species data represents the number of species recorded from each of the Galapagos islands. A fundamental 'law' of island biogeography is that species diversity tends to follow a power law relationship with island area, i.e. $$\mbox{species} = \alpha\times{\mbox{area}^\beta}$$  
 This is not linear, but it suggests that the following regression might make sense: 
 $$\log(\mbox{species}) = a + \beta \times log(\mbox{area})$$
 $a$ is not quite $\alpha$, rather $a=\log(\alpha)$.  
 Fit this regression, and present a brief write-up that a) describes the results in words, and b) summarizes your conclusions from diagnostic model checking.
 
+```{r}
+# Galapagos Islands Data
+Galapagos <- read.table('data/GalapagosData.txt')
+# Viewing the Data
+ggplot(data=Galapagos) + geom_point(aes(x=Nspecies,y=Area))
+# Because the data have one observation with with a much larger area, the relationship will be easier to see with smaller scales that leave out the point
+ggplot(data=Galapagos) + geom_point(aes(x=Nspecies,y=Area)) +
+  scale_y_continuous(limits=c(0,1200))
+# Creating and Viewing the model (with log transformation)
+model2 <- lm(log(Nspecies)~log(Area),data=Galapagos)
+summary(model2)
+# Residual Diagnostic Plots
+plot(model2)
+```
+
+  a. From the Adjusted R-squared value, 0.557, we learn that the model (more specifically, the area of the island) accounts for 56% of the variation in the number of species present. Also, based upon the t-value and its associated p-value, we learn that there is a statistically significant relationship between the number of species and the area of the island.
+  b. This is a fairly small dataset, but based upon the Residual vs. Fitted plot, I would say that a line may not be the best fit (the average residual goes up and down a fair amount), but it is kind of difficult to tell with the small amount of data.From the Normal Q-Q plot, I would question whether or not the residuals were close enough to the normal distribution and would probably want to check a more definite test. The points are indeed close to the line, but they are still not quite as close as I would personally like. Since this is a small dataset, only 17 observations, I don't even think we can rely upon the Central Limit Theorem and say N is large enough. From the Scale-Location plot, I would say that there is not constant varaiance. In this graphic, it appears that residuals tend to be smalller at higher predicted values. In the Residuals vs. Leverage plot, we see that most of the points have a fairly small leverage; however, points 12 and 17 had relatively high residuals (the residuals were standardized and they are close to two standard deviations away from zero). They also have a fairly high Cook's D value. Because of these higher values, these observations may be considered outliers.

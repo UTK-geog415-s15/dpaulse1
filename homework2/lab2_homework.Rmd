@@ -5,6 +5,16 @@ date: "February 2, 2015"
 output: html_document
 ---
 
+```{r}
+setwd('F:/Documents/Geography_415/dpaulse1/homework2')
+precip <- read.csv('data/precip.csv')
+rwi <- read.csv('data/rwi.csv')
+library('ggplot2')
+library('dplyr')
+library('tidyr')
+library('magrittr')
+```
+
 # Part 1. Analysis of El Malpais data
 
 What do the tree ring data tell us about monthly precipitation?
@@ -23,27 +33,84 @@ In answering these questions, I want to see:
  - Two (or one) plots showing the correlation at every month between tree ring width and precipitation, for both the current year and the previous year.  If you can get both current and previous (lagged) year on one plot, then great.
  
  Make sure that your charts are properly labeled and are referred to in your answer.
+ 
+```{r}
+# Arranging the data and adding a date string
+temp.data <- gather(data=precip, key=month, value=precip, -year)
+temp.data <- arrange(temp.data, year, month)
+temp.data <- mutate(temp.data, date=paste(month, year))
+
+# Creating a bar chart for monthly average precipitation
+precip.avg <- group_by(temp.data, month)
+precip.avg <- summarize(precip.avg, precip=mean(precip, na.rm=TRUE))
+ggplot(precip.avg, aes(month, precip)) + geom_bar(stat='identity') +
+  labs(x='Month', y='Average Precipitation (in)', title='Average Precipitation by Month')
+
+# Joining the two datasets
+full.data <- left_join(rwi, temp.data, by='year') %>% filter(year >= 1895)
+
+# Scatterplots of  tree ring width versus precipitation
+# January
+filter(full.data, month=='Jan') %>% ggplot(data=.) +
+  geom_point(aes(x=rwi, y=precip)) + 
+  labs(x='Tree Ring Width', y='Precipitation', title='January')
+# August
+filter(full.data, month=='Aug') %>% ggplot(data=.) +
+  geom_point(aes(x=rwi, y=precip)) +
+  labs(x='Tree Ring Width', y='Precipitation', title='August')
+
+# Correlations between tree ring width and precipitation
+# Current year
+corr.data1 <- group_by(full.data, month)
+corr.data1 <- summarize(corr.data1, r=cor(rwi,precip))
+# Lagged year
+corr.data2 <- group_by(full.data, month)
+corr.data2 <- summarize(corr.data2, r=cor(rwi,lag(precip,k=12),use='complete.obs'))
+# Combining the two previous datasets
+corr.data1$description <- 'r'
+corr.data2$description <- 'lagged r'
+corr.data <- rbind(corr.data1, corr.data2)
+rm(corr.data1, corr.data2)
+corr.data$description <- factor(corr.data$description, levels=c('r','lagged r'))
+# Plotting the two correlations side-by-side on a bar chart
+ggplot(corr.data, aes(x=month, y=r, fill=description)) +
+  geom_bar(stat='identity', position=position_dodge()) +
+  labs(x='Month', y='Correlation Coefficient (r)', title='Correlation Coefficient by Month')
+```
+
+#### Interpreting the Above Graphics
+Based upon the bar chart labeled “Average Precipitation by Month”, the average precipitation during the spring, fall, and winter is around a little less than an inch per month. However, in the summer, the average precipitation per month is somewhere around two to two and a half inches. June is an exception to this, but since summer does not begin until later in the month, the smaller amount of rainfall could make sense.
+
+To examine the correlation between tree ring width and rainfall for the current year’s monthly precipitation, we can examine the red bars on the bar chart labeled “Correlation Coefficient by Month”. From the chart, we can see that the following months show an association between monthly precipitation and tree ring width: January, February, March, April, May, and July. From the data, there are two scatterplots to examine the association between tree ring width and precipitation (each titled using the month’s name from which the precipitation values were taken). For the January scatterplot, there is a correlation coefficient value of around 0.3 (based upon the earlier bar chart). The association is still fairly weak to draw a solid line, but linear correlation is still appropriate. For August, there is no relationship present in the data (the correlation value on the bar chart is barely above 0). Overall, the months that were described above as having an association between rainfall and tree ring width would likely be similar to the scatterplot of January (linear correlation would be weak but appropriate). Based upon the bar chart, if I were to choose 12 months to correlate with tree ring width, I would start with the precipitation from July of the previous year and end with the present year’s June precipitation (the correlation between tree ring width and the previous year’s monthly precipitation is represented by the blue bars in the bar chart). 
 
 # Part 2: Getting the interpretation of correlation correct.
 
 
 1. In regard to the first part, which of the following is more correct and explain.
-  - A positive correlation between tree ring width and January precipitation might happen because January is often (but not always) wetter than the average month.
-  - A positive correlation between tree ring width and January precipitation might happen if dryer-than-average Januarys are associate with smaller-than-average tree ring widths.
+  - A positive correlation between tree ring width and January precipitation might happen if dryer-than-average Januarys are associate with smaller-than-average tree ring widths.  
+    * The above statement makes more sense. Typically, we would expect a tree to grow more with more rainfall, so higher rainfall would produce wider than average tree rings. So, the opposite, less rainfall producing smaller than average tree rings, is also logical.
 
 2. 
-  - Would the correlation between the age of a second-hand car and its price be positive or negative?  Why?  (Antiques are not included.)
-  - How would including antique cars change your response?
+  - Would the correlation between the age of a second-hand car and its price be positive or negative?  Why?  (Antiques are not included.)  
+    * Excluding antiques, the correlation between a second-hand car’s age and its price would be negative. As the car gets older, it will depreciate and will likely have been driven for an increasing number of miles. These, and other factors, will lead to the car decreasing in value over time.
+  - How would including antique cars change your response?  
+    * Antique cars would definitely change how well a line would fit the data. The data would start by showing a negative line representing the car’s value decreasing as it aged, but once the age reached the point that the car could be considered antique, the data points would show high prices. This would cause the line to try and shift to reach closer to the high antique values, ruining the strong correlation it would have for simply older cars.
 
-3. True or False, and explain: if the correlation coefficient is 0.90, then 90% of the points are highly correlated.
+3. True or False, and explain: if the correlation coefficient is 0.90, then 90% of the points are highly correlated.  
+  - False. A correlation coefficient of 0.9 simply means that most of the data points in a scatterplot would be on or near a straight line. 
 
-4. An economist is studying the relationship between household income and teenage pregnancy in the United States.  She has data for each of the 50 states, showing the average household income of families with teenagers, and the rates of pregnancy among teenage girls in that state.  The correlation is 0.4.  Does this give a fair estimate of th e strength of the association between household income and teenage pregnancy?  Explain.
+4. An economist is studying the relationship between household income and teenage pregnancy in the United States.  She has data for each of the 50 states, showing the average household income of families with teenagers, and the rates of pregnancy among teenage girls in that state.  The correlation is 0.4.  Does this give a fair estimate of the strength of the association between household income and teenage pregnancy?  Explain.  
+  - While the correlation between household income and teenage pregnancy says there is an association, there are likely other factors that would explain the association better. These factors would be correlated to the two being examined, income and teenage pregnancy. These other, hidden/not examined, factors are commonly called lurking variables. Examples of possible lurking variables might be child allowance or child curfew. 
 
 5. Three data sets are collected and the correlation coefficient is computed in each case.  The variables in the datasets are:
-  - grade point average in freshman year and sophomore year in college.
-  - grade point average in freshman year and senior year in college.
-  - length and weight of two-by-four boards of lumber.
+  - grade point average in freshman year and sophomore year in college.  
+    * I would expect the correlation coefficient between the GPA in freshmen year and sophomore year in college to be the 0.6 value. If a student works hard their freshmen year to do well in classes, they will most likely continue to try and do well in their classes the next year.  
+  - grade point average in freshman year and senior year in college.  
+    * For the GPA in freshmen year and senior year, I would expect the correlation coefficient value of 0.3. Again, students who try to make good grades their freshmen year are likely to continue to do so throughout their college degrees. However, the correlation coefficient is now lower for various possible reasons: tougher classes, “burn-out”, busier schedule, etc.  
+  - length and weight of two-by-four boards of lumber.  
+    * I would expect the 0.95 correlation coefficient value to describe the association between the length and weight of two-by-four boards of lumber. As a board's length increases or decreases, the weight should do the same as there is either an increase or decrease in material. 
   
   Possible values for correlation coefficients are: -0.5,   0.0,   0.3,  0.6,  0.95.  Match the correlations with the data sets; two will be left over.  Explain your answers.
 
-6. Studies find a negative correlation between hours spent watching television and scores on reading tests.  Does watching television make people less able to read?  Discuss briefly.
+6. Studies find a negative correlation between hours spent watching television and scores on reading tests.  Does watching television make people less able to read?  Discuss briefly.  
+  - Personally, I do not feel that watching television makes people less able to read. However, with increased television viewing, people are reading less and less. Reading tests commonly check several aspects, two of which are reading speed and comprehension. Both of these skills are best improved by simply reading more. Watching television may have also resulted in limiting peoples’ attention-spans, making it harder to concentrate when it is required. So, while I do not think watching television has damaged peoples’ ability to simply read, I think that it (along with the internet) may have slowed reading speeds and made it harder for some to remember and fully understand what they have read.
