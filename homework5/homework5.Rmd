@@ -2,7 +2,7 @@
 title: "Homework 5"
 author: "Nicholas Nagle"
 date: "March 30, 2015"
-output: pdf_document
+output: html_document
 ---
 
 For this assigment you will use a dataset of housing prices in Boston.
@@ -11,7 +11,12 @@ You can get a copy of the data in the spdep R package.
 Don't forget to use `install.packages` if you need to!
 
 ```{r, message=FALSE}
+setwd('F:/Documents/Geography_415/dpaulse1/homework5')
 library(spdep)
+library('ggplot2')
+library('GGally')
+library('dplyr')
+library('magrittr')
 data(boston)
 ```
 
@@ -26,13 +31,6 @@ head(boston.c)
 
 Most of these variables were selected because Economic theory suggests that each should impact median value.  A scatterplot matrix is a helpful to quickly visualize many bivariate relations.  I like the scatterpot matrix function in the GGally package called `ggpairs`.
 Sorry it looks so bad printed out.  It's better on a big screen.
-```{r, message=FALSE}
-library(ggplot2)
-library(GGally)
-library(dplyr)
-boston.c %>% mutate(logMEDV = log(CMEDV), logDIS=log(DIS)) %>% 
-  select(AGE, RM, logDIS, B, LSTAT, PTRATIO, NOX, logMEDV) %>% ggpairs()
-```
 
 We are trying to understand the various determinants of house price, including air pollution.
 One of the most important aspects of house price in the US is suburbanization.
@@ -51,15 +49,73 @@ ggplot(boston.c) + geom_point(aes(x=X, y=Y, color=log(DIS)))
 ```
 
 # Homework Assignment:
+```{r}
+# Making the log(variables) permanent columns
+boston <- boston.c
+boston$logMEDV <- log(boston$CMEDV)
+boston$logDIS <- log(boston$DIS)
+boston %>% select(AGE, RM, logDIS, B, LSTAT, PTRATIO, NOX, logMEDV) %>% ggpairs()
+```
+
 1. Using the scatterplot matrix (`ggpairs`), 
  a. Describe the correlates of house price.
+ - Age - As would be expected, the correlation between house price and Age is negative. This makes since seeing as an older house will typically not sell for as high a price.  
+ - RM - The correlation between house price and RM (the number of rooms) shows a strong positive correlation. Again, this is logical as houses with more rooms would be more valuable (also likely larger, leading to a higher price).  
+ - logDIS - In some respects, the positive correlation between logDIS and house price is somewhat of a surprise. In some respects, it would make sense that being farther from work would lower a house's value; however, the further houses are likely part of some of the nicer, newer suburbs. Because of this, the house values at farther distances are probably more valuable.  
+ - B - (???)  
+ - LSTAT - Understandably, the correlation between LSTAT (the percentage of lower status population) and house prices is negative. As there are more people of lower status, the people would not be able to afford houses of higher value.  
+ - PTRATIO - The ratio of pupil to teacher is also negatively correlated with housing prices. It is typically better for children to learn if they are in smaller classes, so better schools try to limit this ratio. Houses near better schools will typically cost more, so this correlation makes sense.  
+ - NOX - NOX represents the amount of air pollution in the area. Understandably, people would prefer less air pollution. Because of this, we would expect the housing prices to increase as this value decreases.  
  b. Describe the correlates of NOX.
-2. Imagine the multivariate regression of log(CMEDV) on NOX, AGE, log(DIS), RM, CRIM, PTRATIO, B, LSTAT, and CHAS.  DO NOT RUN THE REGRESSION YET.  For each of these variables, predict whether you think the regression coefficient will be positive or negative, and why.  Remember, the multivariate regression relationship is the relationship AFTER you hold the other values fixed.  So, for instance to think about the relationship between Distance and value, you should think like: "Imagine two houses that have the same age, same number of rooms, same racial and ethnic neighborhood, same tax rate, etc.  Now move one of those houses farther from workplaces.  Should that change increase or decrease housing value."  Answer: Economic theory suggest that everything else equal, being far from work is a bad thing.  Note, the Charles River is a particulurly industrial part of town.
+ - AGE - There is a strong positive correlation between age and the concentration of nitric oxides. This makes sense as most of the factories that would produce these chemicals are likely in the older, downtown area of town.  
+ - RM - It is not surprising to see that the correlation between nitric oxide concentration and number of rooms per dwelling is negatively correlated. In the downtown areas, where there would be a higher nitric oxide concentration, the houses would likely be smaller and therefore have less rooms.  
+ - logDIS - Since the vast majority of jobs would likely be downtown. It is not surprising that there is a strong negative correlation between nitric oxide concentration and the log-value of distance from work.  
+ - B (???)  
+ - LSTAT - The strong, positive relationship between the proportion of lower status population and nitric oxide concentration makes sense because the lower valued houses would be downtown, where the nitric oxide concentrations would be higher.  
+ - PTRATIO - I actually expected this correlation would be stronger, although it is not surprising that it is positive. I would expect the ratio of pupils to student to increase as populations increase, such as in downtown, and this is also where there would be higher concentrations of nitric oxide.  
+ - logMEDV - As the concentration of nitric oxides decreases, farther from downtown, we would expect the houses to be newer and people to prefer the cleaner air. Because of this, we would expect the strong, negative correlation.  
+ 
+ 
+2. Imagine the multivariate regression of log(CMEDV) on NOX, AGE, log(DIS), RM, CRIM, PTRATIO, B, LSTAT, and CHAS.  DO NOT RUN THE REGRESSION YET.  For each of these variables, predict whether you think the regression coefficient will be positive or negative, and why.  Remember, the multivariate regression relationship is the relationship AFTER you hold the other values fixed.  So, for instance to think about the relationship between Distance and value, you should think like: "Imagine two houses that have the same age, same number of rooms, same racial and ethnic neighborhood, same tax rate, etc.  Now move one of those houses farther from workplaces.  Should that change increase or decrease housing value."  Answer: Economic theory suggest that everything else equal, being far from work is a bad thing.  Note, the Charles River is a particulurly industrial part of town.  
+  - NOX - After accounting for all other variables, I would expect the regression coefficient of the concentration of nitric oxide to be negative. It would be better to have less air pollution, so as this value increased, it is likely the house prices would go down.  
+  - AGE - In a multivariate regression equation, I would expect the slope of the AGE variable, the proportion of houses built prior to 1940, to be negative. Older houses are likely to be in poorer shape than newer houses and are likely to have older appliances, wiring, etc. which would decrease the value of the house.   
+  - logDIS - With all other variables held constant, I would expect the regression coefficient of logDIS, distance from work centers, to be negative. People will commonly prefer shorter commute times and not having to use as much gas, therefore, the prices of houses near work centers would be more expensive.  
+  - RM - On average, I would expect that the adding extra rooms would drive up the price of a house, meaning that it would have a positive regression coefficient.  
+  - CRIM - I would expect the slope of CRIM, the per-capita crime, to be negative because people would be willing to pay more to feel safer. Especially since many homeowners have children, whose safety is even more a priority.  
+  - PTRATIO - Because smaller class sizes allow for students to get more attention when they need it, schools with lower pupil to teacher ratios tend to perform better. Having better schools would definitely increase the price of the house, so I would expect this coefficient to be positive.  
+  - B - (???)  
+  - LSTAT - I would expect the slope of LSTAT, the proportion of lower status population, to be negative. Because lower status residents have less income, I would expect areas with higher values would have lower home values.  
+  - CHAS - Because the Charles River is a particulurly industrial part of town, I would expect the house values near it to be lower. There would be lots of noise from the industries and there is a potential for a lot of waste. Therefore, after accounting for all other variables, I would expect the slope to be negative.  
+  
+  
 3. One of the relationships is a negative relationship between Distance from Work (primarily Boston) and House Value.  Fit a bivariate regression between log CMEDV and log DIS
- a. Report the slope of this regression and interpret it's value.
+```{r}
+univariate <- lm(logMEDV~logDIS, data=boston)
+summary(univariate)
+```
+ a. Report the slope of this regression and interpret it's value.  
+ - Slope: 0.307  
+ - Interpretation: A 1% change in DIS increases house value by 0.307%.
  b. Report approximate 95% confidence intervals for the slope.
+```{r}
+0.30706 - (2*0.03081) # Lower confidence limit
+0.30706 + (2*0.03081) # Upper confidence limit
+```
+ - 95% CI: (0.245, 0.369)  
+ 
+ 
 4. Fit the linear regression from question 2.
+```{r}
+multivariate <- lm(logMEDV~NOX + AGE + logDIS + RM + CRIM + PTRATIO +
+  B + LSTAT + CHAS, data=boston)
+summary(multivariate)
+```
  a. Report the coefficient of log Distance.  Interpret it's value and report it's 95% confidence interval.  
- b. Explain why the coefficient on log Distance changed so dramatically from in question 3.
- c. Come to a conclusion regarding the relationship of air quality (measured by NOX).  Is there evidence that NOX has a relationship on house value?  Be sure to describe both the value of that relationship and the possible range of values.
+ - Slope: -0.25  
+ - Interpretation: Holding all other variables fixed, a 1% change in DIS will decrease CMEDV, median house value, by 0.25%.
+ b. Explain why the coefficient on log Distance changed so dramatically from in question 3.  
+ - The reason that the coefficient of logDIS changed so much is that in the univariate model, the distance variable, logDIS, was having to account for more than just variation in distance (because there was more that impacts housing price). In the multivariate regression, all the other variables are helping explain the variation, so the true way distance affects the housing price can be seen.  
+ c. Come to a conclusion regarding the relationship of air quality (measured by NOX).  Is there evidence that NOX has a relationship on house value?  Be sure to describe both the value of that relationship and the possible range of values.  
+ - NOX does seem to have an impact as the coefficient is statistically different than zero. The coefficient value is -0.925 with a 95% confidence interval of
+(-1.207, -0.643). Therefore, as NOX increases, house values will, on average, decrease.
  
