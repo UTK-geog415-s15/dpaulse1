@@ -2,26 +2,49 @@
 title: "Untitled"
 author: "Nicholas Nagle"
 date: "March 7, 2015"
-output: pdf_document
+output: html_document
 ---
+###Two-sample T-test
 
 1. Two-sample T-test> ACT scores
 Consider the hypothesis that college-bound males and females have the same average ACT scores.
-```{r}
-act <- read.table('ACT_scores.txt', header=TRUE)
 
+```{r}
+library('ggplot2')
+library('tidyr')
+library('dplyr')
+library('Sleuth3')
+```
+
+```{r}
+setwd('F:/Documents/Geography_415/dpaulse1/homework4')
+act <- read.table('ACT_scores.txt', header=TRUE)
+act2 <- gather(act, key=Sex, value=Score)
+rm(act)
 ```
  a. Write out the hypothesis that is tested by a two-sample t-test in this case.
- b. Using boxplots and summary statistics, report on the suitability of these data for a two-sample t-test to evaluate the hypothesis that seeding influences rainfall.
- c. Conduct a t-test to evaluate the hypothesis that seeding influences rainfall and report the result.
+  - The hypothesis being tested in this case is whether or not there is a statistically significant difference in ACT scores between Males and Females.  
+  
+ b. Using boxplots and summary statistics, report on the suitability of these data for a two-sample t-test to evaluate the hypothesis.
+```{r}
+ggplot(act2) + geom_boxplot(aes(x=Sex, y=Score))
+act2 %>% group_by(Sex) %>% summarize(Mean=mean(Score), Median=median(Score),
+  'Std Dev'=sd(Score), N=n())
+```
+  - Based upon the boxplots and the summary statistics, I would say the groups are fairly similar and would expect the two-sample t-test to produce a result with a low t-value and high p-value. The variances of the two genders are similar enought that this type of analysis can be performed.
+  
+  
+ c. Conduct a t-test to evaluate the hypothesis.
+```{r}
+t.test(Score~Sex, data=act2)
+```
+  - Based upon the very low t-value and the high p-value, we have evidence to confirm the hypothesis that there is no difference in test scores between Males and Females.
 
 2.  Two-sample t-tests.  Cloud Seeding.
 
 These data were collected in Southern Florida between 1968 and 1972 to test a hypothesis that seeding silver iodide into clouds can promote rainfall.  They appear in a number of intriductory texts, including a favorite intermediate text of mine: Ramsay and Schafer's The Statistical Sleuth.  The data contain 52 weather events that were deemed suitable for seeding.  On each day an airplane flew the clouds and a payload was released.  It was randomly determined whether the payload would contain silver iodide or not, but the pilots were unaware of this, i.e. the pilots were blind to the treatment.  Following the flight, radar was used to measure the precipitation falling from the cloud (in units of acre-feet). 
 ```{r}
 library(Sleuth3)
-data(case0301)
-head(case0301)
 # Here are two ways to calculate a boxplot
 # boxplot(Rainfall~Treatment, data=case0301)
 # library(ggplot2)
@@ -31,15 +54,50 @@ head(case0301)
 # tapply(X=case0301$Rainfall, INDEX=case0301$Treatment, FUN=mean) # Calculate mean, repeat for sd
 # library(dplyr)
 # case0301 %>% group_by(Treatment) %>% summarize(m=mean(Rainfall), sd=sd(Rainfall), n=n() )
+seed <- case0301
 ```
 
- a. Using boxplots and summary statistics, report on the suitability of these data for a two-sample t-test to evaluate the hypothesis that seeding influences rainfall.
- b. Conduct a t-test to evaluate the hypothesis that seeding influences rainfall and report the result.
- c. Repeat a. and b. using a log-transform of the rainfall measurement.  Which analysis do you prefer and why?
- d. Why is it important that the pilots were unaware of whether they were seeding or not?
- e. Unfortunately, we do not have the date of the weather event.  Why would it be helpful to have  this information?
+ a. What hypothesis is being tested?
+  - Here, the two-sample t-test will help determine if cloud seeding makes a significant difference in the amount of Rainfall.
+ b. Using boxplots and summary statistics, report on the suitability of these data for a two-sample t-test to evaluate the hypothesis that seeding influences rainfall.
+```{r}
+ggplot(seed) + geom_boxplot(aes(x=Treatment, y=Rainfall))
+# Because the results are kind of crammed down towards the bottom of the chart, I resized the bounds of the y-axis.
+ggplot(seed) + geom_boxplot(aes(x=Treatment, y=Rainfall)) +
+  scale_y_continuous(limits=c(0,1000))
+seed %>% group_by(Treatment) %>% summarize(Mean=mean(Rainfall),
+  Median=median(Rainfall), 'Std Dev'=sd(Rainfall), N=n())
+```
+  - Based upon the boxplots and the summary statistics, I would say it is possible that there a statistically significant difference between the treatment and control group. The boxplots are similar enought that there may not be though. Looking at the variances, I would think they are different enought that a different method may be more appropriate, but without a statistical test, I could not say for sure.  
+  
+ c. Conduct a t-test to evaluate the hypothesis that seeding influences rainfall and report the result.
+```{r}
+t.test(Rainfall~Treatment, data=seed)
+```
+  - From the results of the two-sample t-test, the difference in Rainfall between the seeded and unseeded clouds is not significant at the 0.05 level. However, the t-value and p-value are very close to the cutoff. Therefore, I would say that cloud seeding does make a difference in the Rainfall, but it may not make as much of a difference as the scientists had hoped.  
+  
+ d. Repeat a., b., and c. using a log-transform of the rainfall measurement.  Which analysis do you prefer and why?
+```{r}
+seed$log_Rainfall <- log(seed$Rainfall)
+ggplot(seed) + geom_boxplot(aes(x=Treatment, y=log_Rainfall))
+seed %>% group_by(Treatment) %>% summarize(Mean=mean(log_Rainfall),
+  Median=median(log_Rainfall), 'Std Dev'=sd(log_Rainfall), N=n())
+t.test(log_Rainfall~Treatment, data=seed)
+```
+  1. This time, the t-test is testing whether there is a difference in log(rainfall) between seeded and unseeded clouds.
+  2. Using log(rainfall), the boxplots look different enough that there will likely be a statistically signficant difference between the two groups. Also, the standard deviations are much more similar in this case, so I would feel more comfortable using this method of analysis.
+  3. Based upon the the results of the t-test (namely, the t-value and p-value), it appears that there is a statistically significant difference in log(rainfall) between the treatment and control group.  
+  
+ e. Why is it important that the pilots were unaware of whether they were seeding or not?
+  - If the pilots had known whether or not they were seeding, it could have produced a source of bias, which could skew results either in favor of or against the study.  
+  
+ f. Unfortunately, we do not have the date of the weather event.  Why would it be helpful to have  this information?
+  - It would be helpful to have the date of the weather events to determine how much rain fell in areas not in the treatment area. It is likely that some days were just more or less rainy than others and this could potentially produce misleading results.  
+  
 
-2. ANOVA
+###ANOVA
+
+3.  Temperatures among Seasons.  
 
 Here are some simple data describing average daily temperatures for different cities grouped by season.
 ```{r data entry}
@@ -47,26 +105,60 @@ Here are some simple data describing average daily temperatures for different ci
 temp = c(60,65,62,64,63,80,85,82,84,83,90,95,101,99,100)
 season = rep( c('Fall', 'Spring', 'Summer'), times=c(5,5,5))
 
-data <- data.frame(temp=temp, season=season)
-
+temperature <- data.frame(Temperature=temp, Season=season)
+rm(temp, season)
 ```
 
 For the air temperature data, conduct an ANOVA and use the F-statistic to test the hypothesis that air temperature varies by season.
+```{r}
+ggplot(temperature) + geom_boxplot(aes(x=Season, y=Temperature))
+temperature %>% group_by(Season) %>% summarize(Mean=mean(Temperature),
+  Median=median(Temperature), 'Std Dev'=sd(Temperature), N=n())
+summary(aov(Temperature~Season, data=temperature))
+```
+  - In this example, the Analysis of Variance (ANOVA) test is showing whether or not there is a statistically significant difference in temperature among three different seasons: Fall, Spring, and Summer.  
+  - Based upon the the boxplots, there is a large difference in temperature among the three seasons. This is not surprising and indicates that it is likely that an ANOVA test would find a statistically significant difference. The three seasons' variances are similar enough to perform this analysis.  
+  - Based upon the ANOVA results, there is strong statisical evidence that there is a difference in temperature among the three different seasons (as we would expect). The F value is very high and the p-value is very low, showing that the difference in temperatures from season to season is much too high to be purely by chance.
+  
 
-3.  Spock Conspiracy Trial.
+4.  Spock Conspiracy Trial.
 
 This is another classic dataset. Dr. Benjamin Spock was a pediatrician who wrote a very popular book in 1948.  In 1968, Dr Spock was accused of conspiring to violate the Selective Services Act by helping young men to medically avoid the military draft during the Vietnam War.  His defence challeneged the case on the grounds that the jury did not contain a single woman, and therefore could not be random.
 
 These data used here contain jury compositions for Spock's judge and 6 other judges in the same court.  For each jury, we have the fraction of the jury that was female.
 
 ```{r}
-data(case0502)
+spock <- case0502
 ```
 
  a. Qualitatively describe these data using boxplots and summary statistics.
+```{r}
+ggplot(spock) + geom_boxplot(aes(x=Judge, y=Percent))
+spock %>% group_by(Judge) %>% summarize(Mean=mean(Percent),
+  Median=median(Percent), 'Std Dev'=sd(Percent), N=n())
+```
+  - From the boxplots, we can see that Spock's judge frequently has a lower number of females on his juries (as compared to the other judges). We can see this from the summary statistics as well as all of the judges other than Spock's had females making up and average of at least 26% females; however, Spock's judge has an average of 14.6%. For the most part, all of the judges have similar amounts of variation, although A is somewhat larger (most likely due to the relatively smaller number of observations).  
+  
  b. Using an ANOVA, test the hypothesis that all of the judges have the same jury compositions on average and report your results.
+```{r}
+summary(aov(Percent~Judge, data=spock))
+```
+  - From the ANOVA results, we can see that at least one of the judges is significantly different in the percentage of females in their juries. Unfortunately, since this is only an ANOVA, there is no statistical evidence to confirm it was only Spock's judge that was significantly different.  
+  
  c. Grouping together Judges A-F, perform a two-sample t-test to test the hypothesis that Spock's judge consistently chooses juries with lower than expected women.
+```{r}
+spock$Judge_Grp <- ifelse(spock$Judge=="Spock's", "Spock's", "Other")
+t.test(Percent~Judge_Grp, data=spock)
+```
+  - From the two-sample t-test, we have statistical evidence (a high t-value and a very low p-value) to confirm that there is a significant difference between the percentage of women chosen by Spock's judge as compared to the other judges.  
+  
  d. Use another ANOVA to evaluate whether or not it was suitable to group together the other 6 judges.
+```{r}
+summary(aov(Percent~Judge_Grp=="Other", data=spock))
+```
+  - From the results of this ANOVA, we can see that at least one of the "Other" judges (judges A-F) is significantly different from the others. Because of this result, it was not really appropriate to group the other judges together.  
+  
  e. How should your interpretation of the results in part (c) change if you rejected the hypothesis the other six judges were not all statistically the same?
+  - Because at least one of the "Other" judges was found to be significantly different from the rest, we do not have statistical evidence to support the claim that the percent of females chosen on the juries of Spock's judge is significantly different from the rest of the judges. However, based upon the boxplots and the summary statistics, I would still likely say that his juries are quite different.  
  
  

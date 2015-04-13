@@ -1,0 +1,78 @@
+---
+title: "Lab 6 Homework"
+output: html_document
+---
+
+```{r load libraries, message=FALSE, warning=FALSE}
+library('dplyr')
+library('ggplot2')
+library('GGally')
+library('car')
+# Load the data
+data(Prestige)
+```
+
+  - First, it is important to see which potential variable appear to have a relationship with income.
+
+```{r ggpairs, message=FALSE, fig.width=8, fig.height=8}
+ggpairs(Prestige %>% filter(!is.na(type)) %>% select(education, women, type,
+  prestige, income))
+```
+
+  - The relationships between income and education, and that of income and prestige look potentially nonlinear. All the other variables (education, women, type, and prestige) look like they may be related to income.
+
+```{r}
+reg0 <- lm(income~education+women+type+prestige, data=Prestige)
+summary(reg0)
+```
+
+  - Based upon the summary results, the variables education and type are not statistically  significant. To check the linearity of education and prestige, I looked at the Component + Residual Plots.
+
+```{r}
+crPlots(reg0)
+```
+
+  - All three of the continuous variables' plots looked fairly linear; however, prestige still showed some non-linearity. To me, the plot almost looked indicative of a cubic relationship. In a real-world sense, this would mean that there is a quick climb to a sort of baseline prestige (based upon income), followed by a fairly flat plateau, and ending with another large increase in prestige for much higher incomes. I feel this pattern makes enough logical sense to explore further, so I added the quadratic and cubic forms of prestige into a new regression equation.
+
+```{r}
+reg1 <- lm(income~education+women+type+prestige+I(prestige^2)+I(prestige^3),
+  data=Prestige)
+summary(reg1)
+crPlots(reg1)
+```
+
+  - Adding the cubic form of prestige did slightly increase the Adjusted R-Square and the cubic form is even statistically significant according to the individual t-test. Looking at the Component + Residual Plots again also shows that the non-linearity in prestige has been eliminated. I'm still not sure about whether to leave in education and type, both of which seem to be highly insignificant. First, I looked at education, seeing as its p-value seemed to be the most insignificant. There are two methods I used to determine whether or not education made much of a difference in the model. First, I used the Added-Variable Plots. 
+
+```{r}
+avPlots(reg1)
+```
+
+  - Looking at the plot for education, the line appeared almost completely flat, which makes it likely that the model would not change much if it were to be left out. The second method I used was to look at an Analysis of Variance between this model and one with all of the variables except education.
+
+```{r}
+# Creating the model without education
+reg2 <- lm(income~women+type+prestige+I(prestige^2)+I(prestige^3), data=Prestige)
+# Comparing the two models using ANOVA
+anova(reg1,reg2)
+```
+
+  - Considering the p-value for the ANOVA test was close one, I would say that education does not provide any additional information and can therefore be dropped from the model.  
+  - Now, when deciding whether or not to remove the type variable. I could not simply do an ANOVA analysis because there are several missing values in type. This leads to the two models using different dataset sizes which makes the ANOVA function give an error message. So, instead, I looked at the Added-Variable Plots again, and the ggpairs correlation matrix.  
+
+```{r, fig.width=8, fig.height=8}
+avPlots(reg2)
+ggpairs(Prestige %>% filter(!is.na(type)) %>% mutate(prest_3=prestige^3) %>%
+  select(women, type, prest_3, income))
+```
+
+  - From the Added-Variable Plots, it does not appear that there is much information gained from the type variable. The professional workers seem to have more of an effect on income than white collar workers, but the slope is still quite small. When looking at the correlation matrix, the professional workers seem to have a fairly noticeable different income. While I do not think that leaving it out would dramatically change the model, I feel it is important enough to keep in the model.  
+  - Now to recheck the assumptions of the model.  
+  
+```{r}
+residualPlots(reg2)
+plot(reg2)
+```
+
+  - The individual residual plots look quite good; however, there is still some slight curviture in the fitted value plot. The rest look almost completely flat at zero as they should.  
+  - The diagnostic plots look fairly good; however, I am a little concerned that the residuals tend to become smaller as the fitted values increases (on the Residual vs. Fitted plot). This may be due to confounding, but it is small enough that I think it will be fine. The Normal Q-Q plot looks fairly Normal other than a few outlier points (primarily general managers and physicians). The Scale-Location plot shows some potential heteroskedasticity, although I believe a large portion of that stems from the outliers in the data. Finally, the Residuals vs. Leverage plot confirms that income for general managers is an outlier and that physicians are an influential point. It would be wrong to remove these points simply because they have unusual values, but it is important to see that they do influence the dataset.  
+  - My final model that I would use to describe income, therefore, would be the regression model using % women, type of profession, and prestige.
