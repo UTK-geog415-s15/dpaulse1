@@ -344,7 +344,8 @@ summary(reg3)</code></pre>
 <ul>
 <li>For the first set of plots, I do not see any glaring issues. The plots look reasonable for the most part. The main concern I could see is that there are some high leverage points in the data as indicated by the Residuals vs Leverage plot.<br /></li>
 <li>The Added-Variable Plots all look reasonable strong as well. The only plot that shows potentially low significance is SibSp. This variable was the most insignificant according to the summary of the regression model, so it is not surprising to see its line so flat. Still, I see little reason to remove it from the model.<br /></li>
-<li>Lastly, what little can be gleaned from the Componet + Residual Plots shows that none of the variables display a nonlinear pattern. Therefore, there is no reason to transform any of the data.</li>
+<li><p>Lastly, what little can be gleaned from the Componet + Residual Plots shows that none of the variables display a nonlinear pattern. Therefore, there is no reason to transform any of the data.</p></li>
+<li><p>I did not know how to show how the imputed data affected the results, but I would assume that it helped form the coefficient (and therefore the Odds-Ratio) for Age. Assuming the imputations were close to the actual data, they probably helped the model. Still, with how few observations had imputed values, it might not have made much of a difference.</p></li>
 </ul>
 
 
