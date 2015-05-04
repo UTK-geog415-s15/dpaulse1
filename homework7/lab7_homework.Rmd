@@ -52,3 +52,89 @@ nephews/nieces, aunts/uncles, and in-laws.  Some children travelled
 only with a nanny, therefore parch=0 for them.  As well, some
 travelled with very close friends or neighbors in a village, however,
 the definitions do not support such relations.
+
+```{r, message=FALSE, warning=FALSE, fig.width=10, fig.height=10}
+# Loading libraries
+library('ggplot2')
+library('dplyr')
+library('GGally')
+library('car')
+
+# Loading the data
+setwd('F:/Documents/Geography_415/dpaulse1/homework7')
+titanic <- read.csv('titanic.csv')
+
+# Factoring the categorical variables
+titanic$Pclass <- as.factor(titanic$Pclass)
+titanic$Sex <- as.factor(titanic$Sex)
+titanic$Embarked <- as.factor(titanic$Embarked)
+
+# Looking at the relationships in the data using correlation matrix
+titanic %>% filter(!is.na(Age)) %>% select(Pclass, Sex, Age, SibSp, Parch,
+  Fare, Embarked, Survived) %>% ggpairs()
+```
+
+  - From the correlation matrix, we see that there definitely appears to be a relationship between Pclass and Survived. There also appears to be a strong correlation between Sex and Survived. Fare and Survived also seems highly related (although, I will likely remove this variable as it will likely be very similar to the Pclass variable).   
+  
+```{r}
+# Model with all variables from ggpairs analysis
+reg0 <- glm(Survived ~ . - PassengerId - Name - Ticket - Cabin, data=titanic,
+  family=binomial(link='logit'))
+summary(reg0)
+```
+
+  - First, I ran the model with all predictor variables other than those that made very litte sense or were uncommonly reported. I did not see any reason PassengerId or Name would influence whether a person survived, so I did not inlcude those. The Ticket number could be helpful, but it would likely provide most of the same information as the Pclass variable (the first number commonly commonly refers to the class of the passenger). I did not use Cabin because there were few observations with the cabin listed.   
+  - Next, because I think Fare is so closely related to Pclass and it is statistically insignificant according to the regression summary, I am going to remove Fare.
+  
+```{r}
+reg1 <- update(reg0, . ~ . - Fare)
+summary(reg1)
+anova(reg0, reg1, test="Chisq")
+coef(reg0)
+coef(reg1)
+```
+
+  - There are three reasons to support getting rid of the Fare variable. One, the AIC in the new regression model is slightly lower. Second, the ANOVA results show that there is little difference between the models. Finally, the coefficients of the remaining variables do not change much when it is removed from the model.  
+  - Looking at the remaining variables, I wonder whether Embarked deserves to be in the model. I do not think that the port at which a passenger embarked would have much, if any, influence upon whether or not they survived. Therefore, the next model I created removed the Embarked variable.
+  
+```{r}
+reg2 <- update(reg1, . ~ . - Embarked)
+summary(reg2)
+anova(reg1, reg2, test="Chisq")
+coef(reg1)
+coef(reg2)
+```
+
+  - Just like the previous model which removed Fare, all three tests show statistical evidence that Embarked is not an important variable in determining whether or not a passenger survived.  
+  - Looking at the summary of the regression model, the last variable that is shown to be statistically inisignificant is Parch, the number of parents/children aboard. Personally, I would think that this would be more significant than it is, although maybe it is because of how closely related it is to SibSp. Still, I will next try a model without Parch to see if there is statistical evidence to drop it or not. 
+  
+```{r}
+reg3 <- update(reg2, . ~ . - Parch)
+summary(reg3)
+anova(reg2, reg3, test="Chisq")
+coef(reg2)
+coef(reg3)
+```
+
+  - Again, all three tests point to the idea that Parch is a statistically insignificant variable (new model has lower AIC, insignificant ANOVA, and similar coefficients). Because of this evidence, I do not mind removing Parch as much as before.  
+  - Now that all of the variables in the model are statistically significant, and make logical sense, I will look at the Log-Odds Ratio and the Odds Ratio (focusing more on the latter as it is easier to interpret). 
+  
+```{r, message=FALSE}
+cbind(coef(reg3), LOR = confint(reg3))
+exp(cbind(coef(reg3), OR = confint(reg3)))
+```
+
+  - Based upon both ratios, we can see how much each variable affected survival, although it is easiest to understand from the Odds Ratio. For example, the confidence interval for the Odds Ratio of Sex shows that being male decreases the odds ratio between 90 and 95 percent, holding all other variables constant. With Age, each additional year old a passenger was decreased their odds ratio by between 3 and 6 percent (again, holding all other variables fixed).  
+  - Lastly, I will look at the diagnostic plots, although some are not as useful on a logistic regression model as they are on a linear regression model. 
+
+```{r}
+plot(reg3)
+avPlots(reg3)
+crPlots(reg3)
+```
+
+  - For the first set of plots, I do not see any glaring issues. The plots look reasonable for the most part. The main concern I could see is that there are some high leverage points in the data as indicated by the Residuals vs Leverage plot.  
+  - The Added-Variable Plots all look reasonable strong as well. The only plot that shows potentially low significance is SibSp. This variable was the most insignificant according to the summary of the regression model, so it is not surprising to see its line so flat. Still, I see little reason to remove it from the model.  
+  - Lastly, what little can be gleaned from the Componet + Residual Plots shows that none of the variables display a nonlinear pattern. Therefore, there is no reason to transform any of the data.  
+  
+  - I did not know how to show how the imputed data affected the results, but I would assume that it helped form the coefficient (and therefore the Odds-Ratio) for Age. Assuming the imputations were close to the actual data, they probably helped the model. Still, with how few observations had imputed values, it might not have made much of a difference. 
